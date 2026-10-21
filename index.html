@@ -80,6 +80,38 @@
     line-height: 2;
   }
 
+  /* ── Milestones ── */
+  #milestones {
+    margin-top: 48px;
+    width: 100%;
+    max-width: 520px;
+  }
+  #milestones h3 {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    text-indent: 0.35em;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 16px;
+    font-weight: normal;
+  }
+  .ms {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid #161b22;
+    font-size: 13px;
+  }
+  .ms:last-child { border-bottom: none; }
+  .ms .ms-date { color: var(--muted); font-size: 12px; }
+  .ms .ms-name { flex: 1; padding: 0 14px; }
+  .ms .ms-done { color: var(--accent); }
+  .ms .ms-left { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .ms.pass { opacity: 0.4; }
+  .ms.special .ms-name { color: var(--accent); font-weight: 500; }
+  .ms.special .ms-left { color: var(--accent); }
+
   .done .days { color: var(--fg); text-shadow: none; }
   .done .label::after { content: " · 已抵达"; color: var(--accent); }
 </style>
@@ -100,8 +132,20 @@
     <span id="quote">再坚持一下，你已经在路上了。</span>
   </div>
 
+  <div id="milestones"><h3>路上的站</h3></div>
+
 <script>
-  const TARGET = new Date(2027, 0, 29, 0, 0, 0); // 2027-01-29 本地时间 00:00
+  const TARGET = new Date(2027, 0, 29, 0, 0, 0); // 2027-01-29
+
+  // 里程碑列表 [{date, name, special}]
+  const MILESTONES = [
+    { date: "2026-11-11", name: "双十一 · 买点好的给自己", special: false },
+    { date: "2026-12-01", name: "最后 60 天", special: true },
+    { date: "2026-12-25", name: "圣诞节 · 一年又要结束了", special: false },
+    { date: "2027-01-01", name: "元旦 · 新年第一天，也是解脱倒计时", special: true },
+    { date: "2027-01-14", name: "最后一个工作日？", special: false },
+  ];
+
   const QUOTES = [
     "再坚持一下，你已经在路上了。",
     "今天过完，又少一天。",
@@ -115,16 +159,64 @@
 
   const el = id => document.getElementById(id);
 
+  function parseDate(str) {
+    const [y, m, d] = str.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
   function countWorkdays(from, to) {
-    // 以"上班时间"粗算：每天 8 小时，剔除周末
     let days = Math.max(0, Math.ceil((to - from) / 86400000));
     let workdays = 0;
     for (let i = 0; i < days; i++) {
-      const d = new Date(from.getTime() + i * 86400000);
-      const w = d.getDay();
+      const day = new Date(from.getTime() + i * 86400000);
+      const w = day.getDay();
       if (w !== 0 && w !== 6) workdays++;
     }
-    return { days, workdays };
+    return workdays;
+  }
+
+  function fmt(date) {
+    return `${date.getMonth() + 1}月${date.getDate()}日`;
+  }
+
+  function buildMilestones(now) {
+    const container = el("milestones");
+    // rebuild each tick (lightweight)
+    const h3 = "<h3>路上的站</h3>";
+    let rows = MILESTONES.map(ms => {
+      const md = parseDate(ms.date);
+      md.setHours(0, 0, 0, 0);
+      const diff = Math.round((md - now) / 86400000);
+      const passed = diff < 0;
+      const cls = (passed ? "ms pass" : "ms") + (ms.special && !passed ? " special" : "");
+      const dateStr = `${md.getMonth() + 1}/${md.getDate()}`;
+      const nameHtml = ms.name;
+      let numHtml;
+      if (diff === 0) numHtml = `<span class="ms-done">就是今天</span>`;
+      else if (diff < 0) numHtml = `<span class="ms-left">${Math.abs(diff)}天前</span>`;
+      else numHtml = `<span class="ms-left">${diff}天</span>`;
+      return `<div class="${cls}"><span class="ms-date">${dateStr}</span><span class="ms-name">${nameHtml}</span>${numHtml}</div>`;
+    }).join("");
+
+    // 总进度条（从今天到终点）
+    const totalDays = Math.round((TARGET - parseDate("2026-10-21")) / 86400000);
+    const elapsed = Math.round((now - parseDate("2026-10-21")) / 86400000);
+    const pct = Math.min(100, Math.max(0, Math.round((elapsed / totalDays) * 100)));
+
+    const progressHtml = `
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #161b22">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+          <span>进度</span><span>${pct}%</span>
+        </div>
+        <div style="background:#161b22;height:4px;border-radius:2px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:var(--accent);border-radius:2px;transition:width 1s ease"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+          <span>10月21日</span><span>1月29日</span>
+        </div>
+      </div>`;
+
+    container.innerHTML = h3 + rows + progressHtml;
   }
 
   function tick() {
@@ -132,27 +224,34 @@
     const left = TARGET - now;
     const done = left <= 0;
 
-    const { days, workdays } = countWorkdays(now, TARGET);
+    const { days, workdays } = (() => {
+      let days = Math.max(0, Math.ceil((TARGET - now) / 86400000));
+      let workdays = 0;
+      for (let i = 0; i < days; i++) {
+        const d = new Date(now.getTime() + i * 86400000);
+        if (d.getDay() !== 0 && d.getDay() !== 6) workdays++;
+      }
+      return { days, workdays };
+    })();
     const hours = Math.max(0, Math.floor(left / 3600000));
 
     el("days").textContent = done ? "0" : days;
-    el("weeks").textContent = done ? 0 : Math.floor(days / 7);
-    el("workdays").textContent = done ? 0 : workdays;
+    el("weeks").textContent = Math.floor(days / 7);
+    el("workdays").textContent = workdays;
     el("hours").textContent = hours > 999 ? (hours / 24).toFixed(0) + "d" : hours;
 
     document.body.classList.toggle("done", done);
 
     if (done) {
       el("quote").textContent = "你到了。";
-      return;
+    } else {
+      const idx = Math.floor(now.getTime() / 86400000) % QUOTES.length;
+      el("quote").textContent = QUOTES[idx];
     }
-    // 每天换一句
-    const idx = Math.floor(now.getTime() / 86400000) % QUOTES.length;
-    el("quote").textContent = QUOTES[idx];
+
+    buildMilestones(now);
   }
 
   tick();
   setInterval(tick, 1000);
 </script>
-</body>
-</html>
