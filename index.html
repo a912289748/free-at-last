@@ -16,7 +16,7 @@
     --muted: #6b7080;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { font-size: 16px; }
+  html { font-size: 16px; overflow-x: hidden; }
 
   body {
     background: var(--bg);
@@ -54,6 +54,12 @@
     display: grid;
     gap: 18px;
   }
+
+  /* CRITICAL: grid items default to min-width:auto, which makes them
+     refuse to shrink below their content. Combined with the scroll
+     containers inside, this pushes the whole page wider than the
+     viewport → horizontal overflow / broken mobile layout. */
+  .app > * { min-width: 0; }
 
   /* ── HEADER ── */
   .header {
@@ -237,22 +243,19 @@
   .timeline-dots {
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
+    align-items: flex-start;
+    margin-top: 12px;
     position: relative;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
+    gap: 4px;
   }
-  .timeline-dots::-webkit-scrollbar { display: none; }
-
   .tl-dot {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    flex: 0 0 auto;
-    min-width: 52px;
-    padding: 0 4px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 2px;
   }
   .tl-dot .dot-circle {
     width: 9px; height: 9px;
@@ -262,6 +265,7 @@
     transition: all 0.5s;
     position: relative;
     z-index: 1;
+    flex: 0 0 auto;
   }
   .tl-dot.done .dot-circle {
     background: var(--accent);
@@ -272,17 +276,10 @@
     background: transparent;
     border-color: rgba(255,255,255,0.2);
   }
-  .tl-dot .dot-label {
-    font-size: 9px;
-    color: var(--muted);
-    text-align: center;
-    line-height: 1.3;
-    max-width: 56px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .tl-dot.done .dot-label { color: var(--accent); }
+  /* Labels are hidden by default — the full names live in the
+     milestone cards below, so repeating them here only crowds
+     the track and forces overflow on narrow screens. */
+  .tl-dot .dot-label { display: none; }
   .tl-dot.special .dot-circle {
     width: 12px; height: 12px;
     border-width: 2px;
@@ -295,6 +292,16 @@
     box-shadow: 0 0 12px rgba(255,107,53,0.6);
   }
   .tl-dot.special.done .dot-label { color: var(--accent2); }
+
+  /* Cursor affordance so people know the strip scrolls */
+  .scroll-hint {
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.45;
+    text-align: center;
+    margin-top: 8px;
+    letter-spacing: 0.08em;
+  }
 
   /* ── ENERGY METER ── */
   .energy-panel {
@@ -466,14 +473,10 @@
     .ms-card { flex: 0 0 124px; padding: 12px 10px; }
     .ms-card-name { font-size: 10px; }
     .ms-card-days { font-size: 18px; }
-    .tl-dot { min-width: 44px; }
-    .tl-dot .dot-label { font-size: 8px; max-width: 44px; }
   }
 
   @media (max-width: 360px) {
     .ms-card { flex: 0 0 112px; }
-    .tl-dot { min-width: 38px; }
-    .tl-dot .dot-label { display: none; }
   }
 
 </style>
@@ -561,6 +564,7 @@
   <div class="timeline-panel">
     <div class="panel-title">路上关卡</div>
     <div class="milestones-scroll" id="msCards"></div>
+    <div class="scroll-hint">← 左右滑动查看全部 →</div>
   </div>
 
   <div class="bottom-note">
