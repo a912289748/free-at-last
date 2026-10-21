@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>距离自由还有…</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --muted: #7d8590;
+    --accent: #3fb950;
+    --accent-dim: #1f6f34;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  .label {
+    font-size: 14px;
+    letter-spacing: 0.35em;
+    color: var(--muted);
+    text-indent: 0.35em;
+    margin-bottom: 28px;
+  }
+
+  .days {
+    font-size: clamp(96px, 26vw, 220px);
+    font-weight: 200;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    text-shadow: 0 0 60px rgba(63, 185, 80, 0.25);
+  }
+
+  .unit {
+    font-size: clamp(16px, 4vw, 24px);
+    color: var(--muted);
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    margin-top: 12px;
+  }
+
+  .breakdown {
+    margin-top: 56px;
+    display: flex;
+    gap: clamp(20px, 6vw, 56px);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .item { text-align: center; }
+  .item .num {
+    font-size: clamp(22px, 5vw, 32px);
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+  }
+  .item .cap {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 0.1em;
+  }
+
+  .target {
+    margin-top: 64px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  .done .days { color: var(--fg); text-shadow: none; }
+  .done .label::after { content: " · 已抵达"; color: var(--accent); }
+</style>
+</head>
+<body>
+  <div class="label">距离自由</div>
+  <div class="days" id="days">--</div>
+  <div class="unit">天</div>
+
+  <div class="breakdown">
+    <div class="item"><div class="num" id="weeks">--</div><div class="cap">周</div></div>
+    <div class="item"><div class="num" id="workdays">--</div><div class="cap">工作日</div></div>
+    <div class="item"><div class="num" id="hours">--</div><div class="cap">小时</div></div>
+  </div>
+
+  <div class="target">
+    2027.01.29<br />
+    <span id="quote">再坚持一下，你已经在路上了。</span>
+  </div>
+
+<script>
+  const TARGET = new Date(2027, 0, 29, 0, 0, 0); // 2027-01-29 本地时间 00:00
+  const QUOTES = [
+    "再坚持一下，你已经在路上了。",
+    "今天过完，又少一天。",
+    "不用努力学，撑住就行。",
+    "你不是不行，只是被榨干了。",
+    "刷手机也是在休息，不内疚。",
+    "每一天都在靠近自由。",
+    "撑过去，然后重新开始。",
+    "12 万在，你输得起。",
+  ];
+
+  const el = id => document.getElementById(id);
+
+  function countWorkdays(from, to) {
+    // 以"上班时间"粗算：每天 8 小时，剔除周末
+    let days = Math.max(0, Math.ceil((to - from) / 86400000));
+    let workdays = 0;
+    for (let i = 0; i < days; i++) {
+      const d = new Date(from.getTime() + i * 86400000);
+      const w = d.getDay();
+      if (w !== 0 && w !== 6) workdays++;
+    }
+    return { days, workdays };
+  }
+
+  function tick() {
+    const now = new Date();
+    const left = TARGET - now;
+    const done = left <= 0;
+
+    const { days, workdays } = countWorkdays(now, TARGET);
+    const hours = Math.max(0, Math.floor(left / 3600000));
+
+    el("days").textContent = done ? "0" : days;
+    el("weeks").textContent = done ? 0 : Math.floor(days / 7);
+    el("workdays").textContent = done ? 0 : workdays;
+    el("hours").textContent = hours > 999 ? (hours / 24).toFixed(0) + "d" : hours;
+
+    document.body.classList.toggle("done", done);
+
+    if (done) {
+      el("quote").textContent = "你到了。";
+      return;
+    }
+    // 每天换一句
+    const idx = Math.floor(now.getTime() / 86400000) % QUOTES.length;
+    el("quote").textContent = QUOTES[idx];
+  }
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
