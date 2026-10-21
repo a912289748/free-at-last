@@ -2,148 +2,560 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>距离自由还有…</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>星际逃亡 · 距离自由</title>
 <style>
   :root {
-    --bg: #0d1117;
-    --fg: #e6edf3;
-    --muted: #7d8590;
-    --accent: #3fb950;
-    --accent-dim: #1f6f34;
+    --accent: #00ff88;
+    --accent2: #ff6b35;
+    --accent3: #00c8ff;
+    --bg: #050510;
+    --panel: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: #e8e8f0;
+    --muted: #6b7080;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
+  html { font-size: 16px; }
+
   body {
     background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
+    color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     user-select: none;
   }
 
-  .label {
-    font-size: 14px;
-    letter-spacing: 0.35em;
+  /* ── STAR FIELD ── */
+  #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+  /* ── SCANLINES ── */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent, transparent 2px,
+      rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+    display: grid;
+    gap: 24px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    padding: 20px 0 8px;
+  }
+  .header-title {
+    font-size: 11px;
+    letter-spacing: 0.5em;
     color: var(--muted);
-    text-indent: 0.35em;
+    text-indent: 0.5em;
+    text-transform: uppercase;
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--accent);
+    margin-top: 6px;
+    letter-spacing: 0.15em;
+    opacity: 0.8;
+  }
+
+  /* ── MAIN COUNTDOWN ── */
+  .main-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .main-panel::before {
+    content: "";
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .orbit-ring {
+    position: relative;
+    width: clamp(220px, 55vw, 340px);
+    height: clamp(220px, 55vw, 340px);
     margin-bottom: 28px;
   }
+  .orbit-svg {
+    width: 100%;
+    height: 100%;
+    animation: slow-spin 60s linear infinite;
+    transform-origin: center;
+  }
+  @keyframes slow-spin { to { transform: rotate(360deg); } }
 
-  .days {
-    font-size: clamp(96px, 26vw, 220px);
-    font-weight: 200;
-    line-height: 0.9;
-    letter-spacing: -0.04em;
-    font-variant-numeric: tabular-nums;
+  .orbit-dot {
+    animation: orbit-travel 60s linear infinite;
+    transform-origin: center;
+  }
+  @keyframes orbit-travel { to { transform: rotate(360deg); } }
+
+  .center-num {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  .center-days {
+    font-size: clamp(52px, 16vw, 96px);
+    font-weight: 900;
+    line-height: 1;
     color: var(--accent);
-    text-shadow: 0 0 60px rgba(63, 185, 80, 0.25);
-  }
-
-  .unit {
-    font-size: clamp(16px, 4vw, 24px);
-    color: var(--muted);
-    letter-spacing: 0.5em;
-    text-indent: 0.5em;
-    margin-top: 12px;
-  }
-
-  .breakdown {
-    margin-top: 56px;
-    display: flex;
-    gap: clamp(20px, 6vw, 56px);
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .item { text-align: center; }
-  .item .num {
-    font-size: clamp(22px, 5vw, 32px);
-    font-weight: 300;
+    text-shadow: 0 0 40px rgba(0,255,136,0.5), 0 0 80px rgba(0,255,136,0.2);
     font-variant-numeric: tabular-nums;
+    transition: color 0.5s;
   }
-  .item .cap {
-    font-size: 12px;
+  .center-days .unit-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 400;
     color: var(--muted);
-    margin-top: 6px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.3em;
+    margin-top: 4px;
   }
 
-  .target {
-    margin-top: 64px;
+  .done .center-days {
+    color: var(--accent2);
+    text-shadow: 0 0 40px rgba(255,107,53,0.6);
+  }
+
+  /* ── SUB STATS ── */
+  .stats-row {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 480px;
+  }
+  .stat-item {
+    flex: 1;
+    background: var(--panel);
+    padding: 14px 8px;
+    text-align: center;
+  }
+  .stat-val {
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-val.accent { color: var(--accent3); }
+  .stat-val.accent2 { color: var(--accent2); }
+  .stat-val.accent3 { color: var(--accent); }
+  .stat-lbl {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── QUOTE ── */
+  .quote-box {
+    text-align: center;
+    padding: 16px 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
     font-size: 13px;
     color: var(--muted);
-    line-height: 2;
+    line-height: 1.8;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s;
   }
+  .quote-box span { transition: opacity 0.5s; }
 
-  /* ── Milestones ── */
-  #milestones {
-    margin-top: 48px;
-    width: 100%;
-    max-width: 520px;
+  /* ── TIMELINE ── */
+  .timeline-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
   }
-  #milestones h3 {
+  .panel-title {
     font-size: 11px;
     letter-spacing: 0.35em;
+    color: var(--muted);
     text-indent: 0.35em;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-title::before, .panel-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .timeline-track {
+    position: relative;
+    padding: 0 4px;
+  }
+  .timeline-progress-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+  .timeline-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent3), var(--accent));
+    border-radius: 2px;
+    transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 0 8px rgba(0,255,136,0.4);
+  }
+  .timeline-dots {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    position: relative;
+  }
+  .tl-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+  .tl-dot .dot-circle {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.15);
+    transition: all 0.5s;
+    position: relative;
+    z-index: 1;
+  }
+  .tl-dot.done .dot-circle {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0,255,136,0.6);
+  }
+  .tl-dot.future .dot-circle {
+    background: transparent;
+    border-color: rgba(255,255,255,0.2);
+  }
+  .tl-dot .dot-label {
+    font-size: 10px;
     color: var(--muted);
     text-align: center;
-    margin-bottom: 16px;
-    font-weight: normal;
+    line-height: 1.3;
   }
-  .ms {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: 9px 0;
-    border-bottom: 1px solid #161b22;
-    font-size: 13px;
+  .tl-dot.done .dot-label { color: var(--accent); }
+  .tl-dot.special .dot-circle {
+    width: 14px; height: 14px;
+    border-width: 2px;
+    border-color: var(--accent2);
+    background: rgba(255,107,53,0.2);
   }
-  .ms:last-child { border-bottom: none; }
-  .ms .ms-date { color: var(--muted); font-size: 12px; }
-  .ms .ms-name { flex: 1; padding: 0 14px; }
-  .ms .ms-done { color: var(--accent); }
-  .ms .ms-left { color: var(--fg); font-variant-numeric: tabular-nums; }
-  .ms.pass { opacity: 0.4; }
-  .ms.special .ms-name { color: var(--accent); font-weight: 500; }
-  .ms.special .ms-left { color: var(--accent); }
+  .tl-dot.special.done .dot-circle {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    box-shadow: 0 0 12px rgba(255,107,53,0.6);
+  }
+  .tl-dot.special.done .dot-label { color: var(--accent2); }
 
-  .done .days { color: var(--fg); text-shadow: none; }
-  .done .label::after { content: " · 已抵达"; color: var(--accent); }
+  /* ── ENERGY METER ── */
+  .energy-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+  .energy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+  }
+  .energy-label {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: var(--muted);
+    text-indent: 0.35em;
+  }
+  .energy-pct {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+  .energy-bar-wrap {
+    background: rgba(255,255,255,0.06);
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+  }
+  .energy-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 2s ease, background 2s ease;
+    position: relative;
+  }
+  .energy-fill::after {
+    content: "";
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 20px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+    border-radius: 0 5px 5px 0;
+    animation: energy-shimmer 2s ease-in-out infinite;
+  }
+  @keyframes energy-shimmer {
+    0%,100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+  .energy-zones {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  .energy-zones span {
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.5;
+  }
+
+  /* ── HORIZONTAL SCROLLER ── */
+  .milestones-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+  .milestones-scroll::-webkit-scrollbar { height: 3px; }
+  .milestones-scroll::-webkit-scrollbar-track { background: transparent; }
+  .milestones-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .ms-card {
+    flex: 0 0 160px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ms-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent3), var(--accent));
+    opacity: 0.6;
+  }
+  .ms-card.special::before {
+    background: linear-gradient(90deg, var(--accent2), #ff3d00);
+    opacity: 0.8;
+  }
+  .ms-card.done { opacity: 0.5; }
+  .ms-card.done::before { background: var(--muted); }
+  .ms-card-date {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .ms-card-name {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .ms-card-days {
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .ms-card.special .ms-card-days { color: var(--accent2); }
+  .ms-card.done .ms-card-days { color: var(--muted); }
+  .ms-card .ms-card-days small {
+    font-size: 11px;
+    font-weight: 400;
+    margin-left: 3px;
+  }
+
+  /* ── ANIMATION ── */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .float-anim { animation: float 4s ease-in-out infinite; }
+  .pulse { animation: pulse-glow 2s ease-in-out infinite; }
+
+  /* ── GLITCH on big number ── */
+  @keyframes glitch {
+    0%, 90%, 100% { text-shadow: 0 0 40px rgba(0,255,136,0.5); clip-path: none; }
+    91% { text-shadow: -3px 0 var(--accent3), 3px 0 var(--accent2); clip-path: inset(10% 0 80% 0); }
+    93% { text-shadow: 3px 0 var(--accent3), -3px 0 var(--accent2); clip-path: inset(70% 0 5% 0); }
+    95% { text-shadow: 0 0 40px rgba(0,255,136,0.5); clip-path: none; }
+  }
+  .glitch { animation: glitch 8s ease-in-out infinite; }
+
+  /* ── BOTTOM ── */
+  .bottom-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.4;
+    padding-bottom: 20px;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 480px) {
+    .stats-row { flex-direction: column; border-radius: 12px; }
+    .stat-item { padding: 12px; }
+    .tl-dot .dot-label { font-size: 9px; }
+    .ms-card { flex: 0 0 140px; }
+  }
 </style>
 </head>
 <body>
-  <div class="label">距离自由</div>
-  <div class="days" id="days">--</div>
-  <div class="unit">天</div>
+<canvas id="stars"></canvas>
 
-  <div class="breakdown">
-    <div class="item"><div class="num" id="weeks">--</div><div class="cap">周</div></div>
-    <div class="item"><div class="num" id="workdays">--</div><div class="cap">工作日</div></div>
-    <div class="item"><div class="num" id="hours">--</div><div class="cap">小时</div></div>
+<div class="app">
+
+  <div class="header">
+    <div class="header-title">星际逃亡 · 任务代号</div>
+    <div class="header-sub pulse">OPERATION LIBERATION</div>
   </div>
 
-  <div class="target">
-    2027.01.29<br />
-    <span id="quote">再坚持一下，你已经在路上了。</span>
+  <!-- MAIN COUNTDOWN -->
+  <div class="main-panel float-anim">
+    <div class="orbit-ring">
+      <svg class="orbit-svg" viewBox="0 0 200 200" fill="none">
+        <!-- outer glow ring -->
+        <circle cx="100" cy="100" r="92" stroke="rgba(0,255,136,0.06)" stroke-width="1"/>
+        <circle cx="100" cy="100" r="80" stroke="rgba(0,255,136,0.04)" stroke-width="0.5"/>
+        <!-- orbit ellipse -->
+        <ellipse cx="100" cy="100" rx="88" ry="30"
+          stroke="rgba(0,255,136,0.12)" stroke-width="1" stroke-dasharray="4 6"/>
+        <!-- planet ring -->
+        <circle cx="100" cy="100" r="55" stroke="rgba(0,200,255,0.08)" stroke-width="1"/>
+        <circle cx="100" cy="100" r="42" stroke="rgba(0,200,255,0.04)" stroke-width="0.5"/>
+      </svg>
+      <!-- orbiting dot -->
+      <div class="orbit-dot" style="position:absolute;top:50%;left:50%;transform-origin:0 0;margin-top:-5px;margin-left:-5px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--accent3);box-shadow:0 0 12px var(--accent3);"></div>
+      </div>
+      <!-- center countdown -->
+      <div class="center-num">
+        <div class="center-days glitch" id="mainDays">--</div>
+        <span class="unit-label">天</span>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-val accent3" id="statWeeks">--</div>
+        <div class="stat-lbl">周</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val accent" id="statWorkdays">--</div>
+        <div class="stat-lbl">工作日</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val accent2" id="statHours">--</div>
+        <div class="stat-lbl">小时</div>
+      </div>
+    </div>
   </div>
 
-  <div id="milestones"><h3>路上的站</h3></div>
+  <!-- QUOTE -->
+  <div class="quote-box"><span id="quoteText">正在初始化...</span></div>
+
+  <!-- TIMELINE -->
+  <div class="timeline-panel">
+    <div class="panel-title">任务时间线</div>
+    <div class="timeline-track">
+      <div class="timeline-progress-bar">
+        <div class="timeline-progress-fill" id="tlFill" style="width:0%"></div>
+      </div>
+      <div class="timeline-dots" id="tlDots"></div>
+    </div>
+  </div>
+
+  <!-- ENERGY METER -->
+  <div class="energy-panel">
+    <div class="energy-header">
+      <div class="energy-label">剩余能量</div>
+      <div class="energy-pct" id="energyPct">--%</div>
+    </div>
+    <div class="energy-bar-wrap">
+      <div class="energy-fill" id="energyFill" style="width:100%;background:linear-gradient(90deg,#ff6b35,#ff3d00);"></div>
+    </div>
+    <div class="energy-zones">
+      <span>耗竭</span><span>低迷</span><span>平稳</span><span>满格</span>
+    </div>
+  </div>
+
+  <!-- MILESTONE CARDS -->
+  <div class="timeline-panel">
+    <div class="panel-title">路上关卡</div>
+    <div class="milestones-scroll" id="msCards"></div>
+  </div>
+
+  <div class="bottom-note">
+    每天醒来，数字都在变小。<br/>你已经在路上了。
+  </div>
+
+</div>
 
 <script>
-  const TARGET = new Date(2027, 0, 29, 0, 0, 0); // 2027-01-29
+  /* ── CONFIG ── */
+  const TARGET = new Date(2027, 0, 29, 0, 0, 0);
+  const START = new Date(2026, 9, 21, 0, 0, 0); // 2026-10-21
 
-  // 里程碑列表 [{date, name, special}]
   const MILESTONES = [
-    { date: "2026-11-11", name: "双十一 · 买点好的给自己", special: false },
-    { date: "2026-12-01", name: "最后 60 天", special: true },
+    { date: "2026-11-11", name: "双十一 · 买点好的给自己", special: true },
+    { date: "2026-12-01", name: "最后 60 天", special: false },
     { date: "2026-12-25", name: "圣诞节 · 一年又要结束了", special: false },
-    { date: "2027-01-01", name: "元旦 · 新年第一天，也是解脱倒计时", special: true },
-    { date: "2027-01-14", name: "最后一个工作日？", special: false },
+    { date: "2027-01-01", name: "元旦 · 解脱倒计时", special: true },
+    { date: "2027-01-14", name: "最后工作周", special: false },
+    { date: "2027-01-29", name: "终点 · 自由", special: true },
   ];
 
   const QUOTES = [
@@ -155,103 +567,175 @@
     "每一天都在靠近自由。",
     "撑过去，然后重新开始。",
     "12 万在，你输得起。",
+    "熬过今天，就是赢。",
+    "你已经比昨天更接近终点了。",
+    "不用冲刺，保持呼吸就好。",
+    "这个倒计时每天都在变小。",
   ];
 
-  const el = id => document.getElementById(id);
+  /* ── STARS ── */
+  (function() {
+    const canvas = document.getElementById("stars");
+    const ctx = canvas.getContext("2d");
+    let W, H, stars = [];
 
-  function parseDate(str) {
-    const [y, m, d] = str.split("-").map(Number);
-    return new Date(y, m - 1, d);
-  }
-
-  function countWorkdays(from, to) {
-    let days = Math.max(0, Math.ceil((to - from) / 86400000));
-    let workdays = 0;
-    for (let i = 0; i < days; i++) {
-      const day = new Date(from.getTime() + i * 86400000);
-      const w = day.getDay();
-      if (w !== 0 && w !== 6) workdays++;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
     }
-    return workdays;
+
+    function init() {
+      resize();
+      stars = Array.from({ length: 200 }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.2 + 0.2,
+        alpha: Math.random(),
+        speed: Math.random() * 0.005 + 0.001,
+        dir: Math.random() > 0.5 ? 1 : -1,
+      }));
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      stars.forEach(s => {
+        s.alpha += s.speed * s.dir;
+        if (s.alpha >= 1 || s.alpha <= 0.1) s.dir *= -1;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,220,255,${s.alpha * 0.6})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", resize);
+    init();
+    draw();
+  })();
+
+  /* ── HELPERS ── */
+  function pd(str) {
+    const [y, m, d] = str.split("-").map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0);
+  }
+  function diffDays(a, b) { return Math.round((b - a) / 86400000); }
+
+  function getWorkdays(from, to) {
+    let count = 0;
+    let cur = new Date(from);
+    while (cur < to) {
+      const w = cur.getDay();
+      if (w !== 0 && w !== 6) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
   }
 
-  function fmt(date) {
-    return `${date.getMonth() + 1}月${date.getDate()}日`;
+  function fmtDate(str) {
+    const d = pd(str);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
-  function buildMilestones(now) {
-    const container = el("milestones");
-    // rebuild each tick (lightweight)
-    const h3 = "<h3>路上的站</h3>";
-    let rows = MILESTONES.map(ms => {
-      const md = parseDate(ms.date);
-      md.setHours(0, 0, 0, 0);
-      const diff = Math.round((md - now) / 86400000);
-      const passed = diff < 0;
-      const cls = (passed ? "ms pass" : "ms") + (ms.special && !passed ? " special" : "");
-      const dateStr = `${md.getMonth() + 1}/${md.getDate()}`;
-      const nameHtml = ms.name;
-      let numHtml;
-      if (diff === 0) numHtml = `<span class="ms-done">就是今天</span>`;
-      else if (diff < 0) numHtml = `<span class="ms-left">${Math.abs(diff)}天前</span>`;
-      else numHtml = `<span class="ms-left">${diff}天</span>`;
-      return `<div class="${cls}"><span class="ms-date">${dateStr}</span><span class="ms-name">${nameHtml}</span>${numHtml}</div>`;
+  /* ── BUILD TIMELINE DOTS ── */
+  function buildTimeline(now) {
+    const container = document.getElementById("tlDots");
+    const total = diffDays(START, TARGET);
+    container.innerHTML = MILESTONES.map(ms => {
+      const msDate = pd(ms.date);
+      const pct = Math.min(100, Math.max(0, ((msDate - START) / (TARGET - START)) * 100));
+      const isDone = msDate <= now;
+      const cls = isDone
+        ? (ms.special ? "tl-dot special done" : "tl-dot done")
+        : (ms.special ? "tl-dot special future" : "tl-dot future");
+      return `<div class="${cls}">
+        <div class="dot-circle"></div>
+        <div class="dot-label">${ms.name}<br/><span style="font-size:9px;opacity:0.6">${fmtDate(ms.date)}</span></div>
+      </div>`;
     }).join("");
 
-    // 总进度条（从今天到终点）
-    const totalDays = Math.round((TARGET - parseDate("2026-10-21")) / 86400000);
-    const elapsed = Math.round((now - parseDate("2026-10-21")) / 86400000);
-    const pct = Math.min(100, Math.max(0, Math.round((elapsed / totalDays) * 100)));
-
-    const progressHtml = `
-      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #161b22">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
-          <span>进度</span><span>${pct}%</span>
-        </div>
-        <div style="background:#161b22;height:4px;border-radius:2px;overflow:hidden">
-          <div style="width:${pct}%;height:100%;background:var(--accent);border-radius:2px;transition:width 1s ease"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
-          <span>10月21日</span><span>1月29日</span>
-        </div>
-      </div>`;
-
-    container.innerHTML = h3 + rows + progressHtml;
+    const elapsed = diffDays(START, now);
+    const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+    document.getElementById("tlFill").style.width = pct + "%";
   }
 
+  /* ── BUILD MILESTONE CARDS ── */
+  function buildCards(now) {
+    const container = document.getElementById("msCards");
+    container.innerHTML = MILESTONES.map(ms => {
+      const msDate = pd(ms.date);
+      const diff = diffDays(now, msDate);
+      const isDone = diff <= 0;
+      const isSpecial = ms.special;
+      const cls = (isSpecial ? "ms-card special" : "ms-card") + (isDone ? " done" : "");
+      const daysText = isDone ? "✓" : (diff === 1 ? `1<small>天</small>` : `${diff}<small>天</small>`);
+      return `<div class="${cls}">
+        <div class="ms-card-date">${fmtDate(ms.date)}</div>
+        <div class="ms-card-name">${ms.name}</div>
+        <div class="ms-card-days">${daysText}</div>
+      </div>`;
+    }).join("");
+  }
+
+  /* ── ENERGY ── */
+  function updateEnergy(now) {
+    const total = diffDays(START, TARGET);
+    const left = diffDays(now, TARGET);
+    const pct = Math.min(100, Math.max(0, (left / total) * 100));
+
+    // Energy inversely tracks progress (more time passed = lower energy)
+    // But we add a random-ish daily variance so it feels alive
+    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+    const variance = ((dayOfYear * 7 + 3) % 13 - 6) * 1.5; // -6 to +12 roughly
+    const energy = Math.min(100, Math.max(5, Math.round(pct + variance)));
+
+    document.getElementById("energyPct").textContent = energy + "%";
+    document.getElementById("energyFill").style.width = energy + "%";
+
+    // Color: green (>60) -> yellow (40-60) -> orange (20-40) -> red (<20)
+    const bar = document.getElementById("energyFill");
+    if (energy > 60) bar.style.background = "linear-gradient(90deg,#00ff88,#00c8ff)";
+    else if (energy > 40) bar.style.background = "linear-gradient(90deg,#00c8ff,#ffd700)";
+    else if (energy > 20) bar.style.background = "linear-gradient(90deg,#ffd700,#ff9500)";
+    else bar.style.background = "linear-gradient(90deg,#ff6b35,#ff3d00)";
+  }
+
+  /* ── QUOTE ── */
+  let lastQuoteDay = -1;
+  function updateQuote(now) {
+    const day = Math.floor(now.getTime() / 86400000);
+    if (day !== lastQuoteDay) {
+      lastQuoteDay = day;
+      const idx = day % QUOTES.length;
+      document.getElementById("quoteText").textContent = QUOTES[idx];
+    }
+  }
+
+  /* ── MAIN TICK ── */
   function tick() {
     const now = new Date();
     const left = TARGET - now;
     const done = left <= 0;
 
-    const { days, workdays } = (() => {
-      let days = Math.max(0, Math.ceil((TARGET - now) / 86400000));
-      let workdays = 0;
-      for (let i = 0; i < days; i++) {
-        const d = new Date(now.getTime() + i * 86400000);
-        if (d.getDay() !== 0 && d.getDay() !== 6) workdays++;
-      }
-      return { days, workdays };
-    })();
+    const totalDays = diffDays(now, TARGET);
+    const workdays = getWorkdays(now, TARGET);
     const hours = Math.max(0, Math.floor(left / 3600000));
 
-    el("days").textContent = done ? "0" : days;
-    el("weeks").textContent = Math.floor(days / 7);
-    el("workdays").textContent = workdays;
-    el("hours").textContent = hours > 999 ? (hours / 24).toFixed(0) + "d" : hours;
+    document.getElementById("mainDays").textContent = done ? "0" : totalDays;
+    document.getElementById("statWeeks").textContent = done ? 0 : Math.floor(totalDays / 7);
+    document.getElementById("statWorkdays").textContent = done ? 0 : workdays;
+    document.getElementById("statHours").textContent = hours > 999 ? Math.round(hours / 24) + "d" : hours;
 
     document.body.classList.toggle("done", done);
 
-    if (done) {
-      el("quote").textContent = "你到了。";
-    } else {
-      const idx = Math.floor(now.getTime() / 86400000) % QUOTES.length;
-      el("quote").textContent = QUOTES[idx];
-    }
-
-    buildMilestones(now);
+    buildTimeline(now);
+    buildCards(now);
+    updateEnergy(now);
+    updateQuote(now);
   }
 
   tick();
   setInterval(tick, 1000);
 </script>
+</body>
+</html>
